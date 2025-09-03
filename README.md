@@ -1,7 +1,7 @@
 # 账号使用记录工具 (Account Usage Tracker)
 
 ```
-![Website Image](https://i.imghippo.com/files/iWot4595ZnM.png)
+![Image Description](https://i.imghippo.com/files/iWot4595ZnM.png)
 
 ```
 
