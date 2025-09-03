@@ -1,7 +1,7 @@
 # 账号使用记录工具 (Account Usage Tracker)
 
 ```
-![TrackAcc](https://i.imghippo.com/files/iWot4595ZnM.png)
+![TrackAcc](https://github.com/aceko-007/TrackAcc/blob/main/images/%E7%BD%91%E7%AB%99.png)
 ```
 
 
