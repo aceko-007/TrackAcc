@@ -1,9 +1,9 @@
 # 账号使用记录工具 (Account Usage Tracker)
 
-```
+
 ![Image Description](https://i.imghippo.com/files/iWot4595ZnM.png)
 
-```
+
 
 这是一个功能强大且高度可定制的本地化网页工具，旨在帮助您清晰、直观地记录和管理每日在不同网站上所使用的多个账号。通过分层结构、标签系统和智能日历，告别混乱，让账号使用情况一目了然。
 
