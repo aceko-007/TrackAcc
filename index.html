@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>账号使用记录工具</title>
+    <!-- In here add your website icon -->
+    <link rel="icon" href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%233b82f6'%3e%3cpath fill-rule='evenodd' d='M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z' clip-rule='evenodd' /%3e%3c/svg%3e">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/weekday.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/weekOfYear.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/zh-cn.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <style>
+        :root {
+            --color-primary-500: #3b82f6; /* blue-500 */
+            --color-primary-600: #2563eb; /* blue-600 */
+            --color-primary-700: #1d4ed8; /* blue-700 */
+            --bg-main: #111827; /* gray-900 */
+            --bg-card: #1f2937; /* gray-800 */
+            --bg-hover: #374151; /* gray-700 */
+            --bg-subtle: #4b5563; /* gray-600 */
+            --border-color: #374151; /* gray-700 */
+            --text-primary: #f9fafb; /* gray-50 */
+            --text-secondary: #d1d5db; /* gray-300 */
+            --text-muted: #9ca3af; /* gray-400 */
+            --text-accent: var(--color-primary-500);
+        }
+
+        body.light {
+            --color-primary-500: #3b82f6;
+            --color-primary-600: #2563eb;
+            --color-primary-700: #1d4ed8;
+            --bg-main: #f8fafc; /* slate-50 */
+            --bg-card: #ffffff;
+            --bg-hover: #f1f5f9; /* slate-100 */
+            --bg-subtle: #e2e8f0; /* slate-200 */
+            --border-color: #e2e8f0; /* slate-200 */
+            --text-primary: #1f2937; /* gray-800 */
+            --text-secondary: #475569; /* slate-600 */
+            --text-muted: #64748b; /* slate-500 */
+            --text-accent: var(--color-primary-600);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+        }
+        .bg-card { background-color: var(--bg-card); }
+        .border-default { border-color: var(--border-color); }
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .text-muted { color: var(--text-muted); }
+        .text-accent { color: var(--text-accent); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: var(--bg-subtle); border-radius: 4px; border: 2px solid var(--bg-main); }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        .custom-checkbox:checked { background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e"); background-color: var(--color-primary-500); border-color: var(--color-primary-500);}
+        .today { background-color: var(--color-primary-500) !important; color: white !important; border-radius: 9999px; }
+        .selected-date { box-shadow: 0 0 0 2px var(--color-primary-500); border-radius: 9999px; }
+        .selected-website { background-color: var(--bg-hover); border-left-color: var(--color-primary-500); }
+        .category-tab.active { border-bottom-color: var(--color-primary-500); color: var(--color-primary-500); font-weight: 600; }
+        .category-tab:hover .delete-category-btn { display: inline-block; }
+        .modal-backdrop { background-color: rgba(17, 24, 39, 0.8); }
+        body.light .modal-backdrop { background-color: rgba(100, 116, 139, 0.6); }
+        .modal-content { max-height: 80vh; }
+        .history-item.active { background-color: var(--bg-hover); border-left-color: var(--color-primary-500); }
+        .sortable-ghost { opacity: 0.4; background: var(--color-primary-700); }
+        .sortable-drag { opacity: 1 !important; }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.5rem 0.875rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-primary { background-color: var(--color-primary-600); color: white; }
+        .btn-primary:hover { background-color: var(--color-primary-700); }
+        .btn-secondary { background-color: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: var(--bg-hover); border-color: var(--bg-subtle); }
+        .btn-danger { background-color: #dc2626; color: white; }
+        .btn-danger:hover { background-color: #b91c1c; }
+        .btn-warning { background-color: #f97316; color: white; }
+        .btn-warning:hover { background-color: #ea580c; }
+        
+        .light .bg-card { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-primary">账号使用记录工具</h1>
+            <p id="selected-date-display" class="text-muted mt-2 text-lg"></p>
+        </header>
+        
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6">
+            <button id="save-btn" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" /></svg>保存</button>
+            <button id="undo-btn" class="btn btn-secondary" disabled><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>撤销</button>
+            <button id="redo-btn" class="btn btn-secondary" disabled><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.293 3.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 9H9a7 7 0 110-14 1 1 0 110 2 5 5 0 000 10h5.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>重做</button>
+            <button id="history-btn" class="btn btn-secondary"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>历史</button>
+            <button id="data-management-btn" class="btn btn-secondary"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>数据管理</button>
+            <button id="instructions-btn" class="btn btn-secondary"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>说明</button>
+            <button id="author-btn" class="btn btn-secondary"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>作者</button>
+            <button id="theme-toggle-btn" class="btn btn-secondary" title="切换主题">
+                <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
+                <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 001.414 1.414l.707-.707a1 1 0 00-1.414-1.414l-.707.707zm-2.12-10.607a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM11 17a1 1 0 10-2 0h2zM3 11a1 1 0 100 2H2a1 1 0 100-2h1z" clip-rule="evenodd" /></svg>
+            </button>
+        </div>
+        
+        <div id="tag-cloud-container" class="mb-6 p-4 bg-card rounded-xl hidden"></div>
+    </div>
+
+    <main class="px-4 sm:px-6 lg:px-8 pb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <div class="lg:col-span-1 flex flex-col gap-8">
+                <div class="bg-card rounded-xl p-6">
+                    <div id="category-nav" class="flex items-center border-b border-default mb-4"></div>
+                    <ul id="website-list" class="space-y-1"></ul>
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                         <button id="add-website-btn" class="btn btn-secondary w-full justify-center">+ 网站</button>
+                         <button id="add-folder-btn" class="btn btn-secondary w-full justify-center">+ 文件夹</button>
+                    </div>
+                </div>
+
+                <div class="bg-card rounded-xl p-6">
+                    <div id="calendar-container"></div>
+                </div>
+            </div>
+
+            <div id="account-list-container" class="lg:col-span-1 bg-card rounded-xl p-6 min-h-[400px] flex flex-col">
+                <div id="account-list-header" class="hidden">
+                    <h2 id="current-website-name" class="text-2xl font-bold text-accent mb-4"></h2>
+                </div>
+                
+                <div id="account-management-section" class="mb-4 pb-4 border-b border-default hidden">
+                    <div>
+                        <h3 class="text-base font-semibold mb-2 text-primary">
+                            添加新账号到 <span id="add-account-target-type" class="text-muted"></span> "<span id="add-account-target-name" class="text-accent"></span>"
+                        </h3>
+                        <form id="add-account-form" class="flex flex-col sm:flex-row gap-2">
+                            <input type="email" id="account-email-input" placeholder="输入新邮箱地址" required class="flex-grow bg-gray-700 border-2 border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300">
+                            <input type="text" id="account-password-input" placeholder="输入密码 (可选)" class="flex-grow bg-gray-700 border-2 border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-300">
+                            <button type="submit" class="btn btn-primary h-full px-4 text-sm">添加</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="flex-grow">
+                    <ul id="account-list" class="space-y-3"></ul>
+                    <div id="empty-state" class="flex items-center justify-center h-full">
+                        <p class="text-muted text-lg">请从左侧选择一个网站或文件夹</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <input type="file" id="import-file-input" class="hidden" accept=".json">
+    <div id="toast" class="fixed bottom-5 right-5 bg-blue-500 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-2 transition-all duration-300 z-50"></div>
+    
+    <div id="history-modal" class="fixed inset-0 z-40 items-center justify-center hidden modal-backdrop"><div class="bg-card rounded-xl shadow-2xl w-full max-w-md m-4 modal-content flex flex-col border border-default"><div class="p-6 border-b border-default flex justify-between items-center"><h2 class="text-2xl font-bold text-primary">操作历史记录</h2><button id="close-history-modal" class="text-muted hover:text-primary">&times;</button></div><ul id="history-list" class="p-6 space-y-2 overflow-y-auto"></ul></div></div>
+    <div id="instructions-modal" class="fixed inset-0 z-40 items-center justify-center hidden modal-backdrop"><div class="bg-card rounded-xl shadow-2xl w-full max-w-2xl m-4 modal-content flex flex-col border border-default"><div class="p-6 border-b border-default flex justify-between items-center"><h2 class="text-2xl font-bold text-primary">使用说明</h2><button id="close-instructions-modal" class="text-muted hover:text-primary">&times;</button></div><div class="p-6 space-y-4 overflow-y-auto text-secondary leading-relaxed">
+        <h3 class="text-lg font-semibold text-accent mb-2">欢迎使用！</h3>
+        <p>本工具旨在帮助您清晰地记录每日在不同网站上所使用的账号，并通过日历直观地展示使用情况。</p>
+        
+        <h3 class="text-lg font-semibold text-accent mb-2 mt-4">主要功能</h3>
+        <div class="space-y-4">
+            <div>
+                <h4 class="font-semibold text-secondary">强大的分层管理</h4>
+                <ul class="list-disc list-inside space-y-2 pl-4 mt-2 text-muted">
+                    <li><strong>多分类管理</strong>: 创建如“工作”、“社交”、“娱乐”等不同分类，隔离管理不同场景的账号。</li>
+                    <li><strong>文件夹与网站</strong>: 在分类下自由创建文件夹和网站项目，支持无限层级嵌套。</li>
+                    <li><strong>拖拽排序</strong>: 通过简单的拖拽操作，轻松调整网站和文件夹的顺序及层级关系。</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold text-secondary">智能账号继承系统</h4>
+                <ul class="list-disc list-inside space-y-2 pl-4 mt-2 text-muted">
+                    <li>可在<strong>分类、文件夹、网站</strong>任意层级添加账号。</li>
+                    <li>下级项目会自动“继承”所有上级定义的账号，方便您集中管理通用账号，同时为特定网站配置专属账号。</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold text-secondary">直观的日历视图</h4>
+                <ul class="list-disc list-inside space-y-2 pl-4 mt-2 text-muted">
+                    <li>在日历上清晰标记每日账号使用情况。</li>
+                    <li>自由切换日期，查看任意一天的账号使用状态。</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold text-secondary">灵活的使用周期计算</h4>
+                <ul class="list-disc list-inside space-y-2 pl-4 mt-2 text-muted">
+                    <li><strong>按天</strong>: 默认模式，精确记录每一天。</li>
+                    <li><strong>按月</strong>: 当月使用过一次，则整月都标记为“已使用”。</li>
+                    <li><strong>自定义天数</strong>: 设定一个周期（如7天），周期内任一天使用过，则周期内所有日期均标记为“已使用”。</li>
+                    <li><strong>截止日期</strong>: 结合月度计算与特定截止日期，适用于有时效性的任务。</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold text-secondary">高效的标签筛选</h4>
+                <ul class="list-disc list-inside space-y-2 pl-4 mt-2 text-muted">
+                    <li>为网站或文件夹打上任意标签（如 重要, 常用, 开发）。</li>
+                    <li>支持<strong>多选标签</strong>进行 AND 逻辑筛选，快速精准地定位您需要的项目。</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold text-secondary">完整的操作历史 (撤销/重做)</h4>
+                <ul class="list-disc list-inside space-y-2 pl-4 mt-2 text-muted">
+                    <li>您的每一步重要操作都会被记录下来。</li>
+                    <li>随时可以撤销误操作，或通过历史记录回溯到任意时间点的状态。</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold text-secondary">便捷的数据管理</h4>
+                <ul class="list-disc list-inside space-y-2 pl-4 mt-2 text-muted">
+                    <li><strong>一键导出</strong>: 将您的所有配置和记录导出为 JSON 文件，轻松备份。</li>
+                    <li><strong>覆盖导入</strong>: 在新设备或新浏览器上，通过导入备份文件，瞬间恢复所有数据。</li>
+                    <li><strong>硬重置</strong>: 当您需要时，可以彻底清空所有本地数据。</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-semibold text-accent mb-2 mt-4">重要提示</h3>
+        <ul class="list-disc list-inside space-y-3 pl-4 text-orange-400/90">
+            <li><strong>数据备份:</strong> 由于数据存储在本地，强烈建议您定期使用“数据管理”中的“导出全部数据”功能进行备份。更换浏览器或清除缓存会导致数据丢失！</li>
+            <li><strong>数据恢复:</strong> 在新设备或重置后，可使用“覆盖导入所有数据”功能恢复您的备份。</li>
+        </ul>
+
+        <h3 class="text-lg font-semibold text-accent mb-2 mt-4">关于项目</h3>
+        <p>本项目为开源项目，欢迎访问我们的 GitHub 仓库，提交问题或贡献代码！</p>
+        <p class="mt-2"><a href="https://github.com/aceko-007/TrackAcc" target="_blank" class="text-blue-400 hover:underline">https://github.com/aceko-007/TrackAcc</a></p>
+    </div></div></div>
+    <div id="edit-item-modal" class="fixed inset-0 z-40 items-center justify-center hidden modal-backdrop"><div class="bg-card rounded-xl shadow-2xl w-full max-w-lg m-4 modal-content flex flex-col border border-default"><div class="p-6 border-b border-default"><h2 id="edit-item-modal-title" class="text-2xl font-bold text-primary">编辑信息</h2></div><div class="p-6 space-y-4 overflow-y-auto"><form id="edit-item-form"><input type="hidden" id="edit-item-id-input"><input type="hidden" id="edit-item-parent-id-input"><div><label for="edit-item-name-input" class="block text-sm font-medium text-secondary mb-1">名称</label><input type="text" id="edit-item-name-input" required class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></div><div id="edit-item-url-container" class="mt-4"><label for="edit-item-url-input" class="block text-sm font-medium text-secondary mb-1">网站 URL</label><input type="url" id="edit-item-url-input" required class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></div><div class="mt-4"><label for="edit-item-tags-input" class="block text-sm font-medium text-secondary mb-1">标签 (用逗号分隔)</label><input type="text" id="edit-item-tags-input" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例如: 工作, 社交, 重要"></div><div id="edit-item-calc-container" class="mt-4"><label for="edit-item-calc-type-select" class="block text-sm font-medium text-secondary mb-1">使用周期计算方式</label><select id="edit-item-calc-type-select" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"><option value="daily">按天计算 (默认)</option><option value="monthly">按月计算</option><option value="custom_days">按自定义天数</option><option value="date_range">截止到指定日期</option></select></div><div id="custom-days-container" class="mt-4 hidden"><label for="edit-item-custom-days-input" class="block text-sm font-medium text-secondary mb-1">自定义天数</label><input type="number" id="edit-item-custom-days-input" min="1" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="例如: 7"></div><div id="date-range-container" class="mt-4 hidden"><label for="edit-item-end-date-input" class="block text-sm font-medium text-secondary mb-1">截止日期</label><input type="date" id="edit-item-end-date-input" class="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></div></form></div><div class="p-6 border-t border-default flex justify-end gap-4"><button id="cancel-edit-item-btn" class="btn btn-secondary">取消</button><button id="save-edit-item-btn" class="btn btn-primary">保存更改</button></div></div></div>
+    <div id="data-management-modal" class="fixed inset-0 z-40 items-center justify-center hidden modal-backdrop"><div class="bg-card rounded-xl shadow-2xl w-full max-w-md m-4 modal-content flex flex-col border border-default"><div class="p-6 border-b border-default flex justify-between items-center"><h2 class="text-2xl font-bold text-primary">全局数据管理</h2><button id="close-data-management-modal" class="text-muted hover:text-primary">&times;</button></div><div class="p-6 space-y-3"><button id="export-data-btn" class="w-full justify-center btn btn-primary">导出全部数据</button><button id="import-global-overwrite" class="w-full justify-center btn btn-warning">覆盖导入所有数据</button><button id="clear-data-btn" class="w-full justify-center btn btn-danger mt-4">清空所有本地数据 (硬重置)</button></div></div></div>
+
+
+    <script>
+        dayjs.extend(dayjs_plugin_weekday);
+        dayjs.extend(dayjs_plugin_weekOfYear);
+        dayjs.locale('zh-cn');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialData = {
+                categories: {
+                    'social-media': { name: '社交媒体', websites: [
+                        { id: 'website-1', type: 'website', name: 'Github', url: 'https://www.aceko007.top', calculationType: 'daily', customDays: null, endDate: null, tags: ['开发', '代码托管'] },
+                    ]},
+                    'ai-chat': { name: 'AI 对话', websites: [
+                        { id: 'website-4', type: 'website', name: 'ChatGPT (7天)', url: 'https://www.aceko007.top', calculationType: 'custom_days', customDays: 7, endDate: null, tags: ['AI', '效率'] },
+                    ]}
+                },
+                accounts: { 'social-media': { '@category': [{ email: "category_wide@example.com", password: "cat" }], 'website-1': [{ email: "website_only@example.com", password: "site" }] }, 'ai-chat': {} }
+            };
+
+            let state = {};
+            let history = [];
+            let historyPointer = -1;
+            let currentImportMode = null;
+            const DOM = {
+                categoryNav: document.getElementById('category-nav'),
+                websiteList: document.getElementById('website-list'),
+                addWebsiteBtn: document.getElementById('add-website-btn'),
+                addFolderBtn: document.getElementById('add-folder-btn'),
+                accountListHeader: document.getElementById('account-list-header'),
+                currentWebsiteName: document.getElementById('current-website-name'),
+                accountList: document.getElementById('account-list'),
+                emptyState: document.getElementById('empty-state'),
+                selectedDateDisplay: document.getElementById('selected-date-display'),
+                calendarContainer: document.getElementById('calendar-container'),
+                toast: document.getElementById('toast'),
+                accountManagementSection: document.getElementById('account-management-section'),
+                addAccountForm: document.getElementById('add-account-form'),
+                accountEmailInput: document.getElementById('account-email-input'),
+                accountPasswordInput: document.getElementById('account-password-input'),
+                addAccountTargetName: document.getElementById('add-account-target-name'),
+                addAccountTargetType: document.getElementById('add-account-target-type'),
+                saveBtn: document.getElementById('save-btn'),
+                undoBtn: document.getElementById('undo-btn'),
+                redoBtn: document.getElementById('redo-btn'),
+                historyBtn: document.getElementById('history-btn'),
+                instructionsBtn: document.getElementById('instructions-btn'),
+                authorBtn: document.getElementById('author-btn'),
+                importFileInput: document.getElementById('import-file-input'),
+                historyModal: document.getElementById('history-modal'),
+                closeHistoryModal: document.getElementById('close-history-modal'),
+                historyList: document.getElementById('history-list'),
+                instructionsModal: document.getElementById('instructions-modal'),
+                closeInstructionsModal: document.getElementById('close-instructions-modal'),
+                editItemModal: document.getElementById('edit-item-modal'),
+                editItemModalTitle: document.getElementById('edit-item-modal-title'),
+                editItemForm: document.getElementById('edit-item-form'),
+                editItemIdInput: document.getElementById('edit-item-id-input'),
+                editItemParentIdInput: document.getElementById('edit-item-parent-id-input'),
+                editItemNameInput: document.getElementById('edit-item-name-input'),
+                editItemUrlContainer: document.getElementById('edit-item-url-container'),
+                editItemUrlInput: document.getElementById('edit-item-url-input'),
+                editItemTagsInput: document.getElementById('edit-item-tags-input'),
+                editItemCalcContainer: document.getElementById('edit-item-calc-container'),
+                editItemCalcTypeSelect: document.getElementById('edit-item-calc-type-select'),
+                customDaysContainer: document.getElementById('custom-days-container'),
+                editItemCustomDaysInput: document.getElementById('edit-item-custom-days-input'),
+                dateRangeContainer: document.getElementById('date-range-container'),
+                editItemEndDateInput: document.getElementById('edit-item-end-date-input'),
+                cancelEditItemBtn: document.getElementById('cancel-edit-item-btn'),
+                saveEditItemBtn: document.getElementById('save-edit-item-btn'),
+                dataManagementBtn: document.getElementById('data-management-btn'),
+                dataManagementModal: document.getElementById('data-management-modal'),
+                closeDataManagementModal: document.getElementById('close-data-management-modal'),
+                exportDataBtn: document.getElementById('export-data-btn'),
+                importGlobalOverwrite: document.getElementById('import-global-overwrite'),
+                clearDataBtn: document.getElementById('clear-data-btn'),
+                tagCloudContainer: document.getElementById('tag-cloud-container'),
+                themeToggleBtn: document.getElementById('theme-toggle-btn'),
+                themeIconDark: document.getElementById('theme-icon-dark'),
+                themeIconLight: document.getElementById('theme-icon-light'),
+            };
+            
+            const findNodeById = (nodes, id) => { for (const node of nodes) { if (node.id === id) return node; if (node.children) { const found = findNodeById(node.children, id); if (found) return found; } } return null; };
+            const findPathToNode = (nodes, id, path = []) => { for (const node of nodes) { const currentPath = [...path, node]; if (node.id === id) return currentPath; if (node.children) { const result = findPathToNode(node.children, id, currentPath); if (result) return result; } } return null; };
+            const findAndToggleFolder = (nodes, folderId) => { const node = findNodeById(nodes, folderId); if (node && node.type === 'folder') { node.isOpen = !node.isOpen; return true; } return false; };
+            const findAndDeleteNode = (nodes, nodeId) => { for (let i = 0; i < nodes.length; i++) { if (nodes[i].id === nodeId) { nodes.splice(i, 1); return true; } if (nodes[i].children && findAndDeleteNode(nodes[i].children, nodeId)) { return true; } } return false; };
+            const findAndAddNode = (nodes, parentId, newNode) => { if (!parentId) { nodes.push(newNode); return true; } const parent = findNodeById(nodes, parentId); if (parent && parent.type === 'folder') { if (!parent.children) parent.children = []; parent.children.push(newNode); parent.isOpen = true; return true; } return false; };
+            const findAndMoveNode = (nodes, itemId, toParentId, newIndex) => { let item = null; function findAndRemove(currentNodes) { for (let i = 0; i < currentNodes.length; i++) { if (currentNodes[i].id === itemId) { [item] = currentNodes.splice(i, 1); return true; } if (currentNodes[i].children && findAndRemove(currentNodes[i].children)) return true; } return false; } findAndRemove(nodes); if (!item) return false; let toParentChildren = nodes; if(toParentId) { const toParent = findNodeById(nodes, toParentId); if(toParent && toParent.type === 'folder') { if(!toParent.children) toParent.children = []; toParentChildren = toParent.children; } else { nodes.push(item); return false; } } toParentChildren.splice(newIndex, 0, item); return true; };
+            const getAccountsForItem = (itemId) => { const categoryId = state.selectedCategoryId; const accountScopes = state.accounts[categoryId] || {}; const accountsMap = new Map(); (accountScopes['@category'] || []).forEach(acc => accountsMap.set(acc.email, {...acc, scope: '@category'})); if (itemId !== '@category') { const path = findPathToNode(state.categories[categoryId]?.websites || [], itemId); if (path) { path.forEach(node => { (accountScopes[node.id] || []).forEach(acc => accountsMap.set(acc.email, {...acc, scope: node.id})); }); } } return Array.from(accountsMap.values()); };
+            const getCombinedTags = (itemId, categoryId) => { const path = findPathToNode(state.categories[categoryId]?.websites || [], itemId); const tags = new Set(); if (path) { path.forEach(node => (node.tags || []).forEach(tag => tags.add(tag))); } return Array.from(tags); };
+            const recordHistory = (description, force = false) => { if (!force && historyPointer > -1 && JSON.stringify(state) === JSON.stringify(history[historyPointer].state)) return; if (historyPointer < history.length - 1) history = history.slice(0, historyPointer + 1); const newState = JSON.parse(JSON.stringify(state)); history.push({ state: newState, description: description, timestamp: dayjs().format('HH:mm:ss') }); historyPointer++; updateHistoryButtons(); };
+            const undo = () => { if (historyPointer > 0) { historyPointer--; loadStateFromHistory(); } };
+            const redo = () => { if (historyPointer < history.length - 1) { historyPointer++; loadStateFromHistory(); } };
+            const loadStateFromHistory = (index = historyPointer) => { historyPointer = index; state = JSON.parse(JSON.stringify(history[historyPointer].state)); migrateDataStructure(state); renderAll(); updateHistoryButtons(); };
+            const updateHistoryButtons = () => { DOM.undoBtn.disabled = historyPointer <= 0; DOM.redoBtn.disabled = historyPointer >= history.length - 1; };
+            const migrateDataStructure = (data) => { const migrateNodes = (nodes) => { if (!nodes) return; nodes.forEach(node => { if (node.type !== 'folder' && node.type !== 'website') node.type = 'website'; node.tags = node.tags || []; if (node.type === 'website') { if (typeof node.monthly === 'boolean') { node.calculationType = node.monthly ? 'monthly' : 'daily'; delete node.monthly; } if (!node.calculationType) node.calculationType = 'daily'; node.customDays = node.customDays || null; node.endDate = node.endDate || null; } if (node.children) migrateNodes(node.children); }); }; Object.values(data.categories).forEach(category => migrateNodes(category.websites)); Object.keys(data.accounts).forEach(categoryId => { if (Array.isArray(data.accounts[categoryId])) { const oldAccounts = data.accounts[categoryId]; data.accounts[categoryId] = { '@category': oldAccounts }; }}); if (data.activeTagFilter && !data.activeTagFilters) { data.activeTagFilters = [data.activeTagFilter]; delete data.activeTagFilter; } };
+            const loadState = () => { const storedData = localStorage.getItem('accountTrackerHistory'); if (storedData) { const parsed = JSON.parse(storedData); history = parsed.history || []; historyPointer = parsed.historyPointer ?? -1; if (history.length > 0 && historyPointer >= 0 && historyPointer < history.length) { state = JSON.parse(JSON.stringify(history[historyPointer].state)); state.selectedDate = dayjs().format('YYYY-MM-DD'); } else { resetToInitialState(); } } else { resetToInitialState(); } migrateDataStructure(state); };
+            const resetToInitialState = () => { state = { selectedDate: dayjs().format('YYYY-MM-DD'), selectedCategoryId: 'social-media', selectedWebsiteId: '@category', usageData: {}, categories: JSON.parse(JSON.stringify(initialData.categories)), accounts: JSON.parse(JSON.stringify(initialData.accounts)), activeTagFilters: [] }; history = []; historyPointer = -1; recordHistory('初始状态'); };
+            const saveState = () => { localStorage.setItem('accountTrackerHistory', JSON.stringify({ history: history, historyPointer: historyPointer })); showToast('数据已保存!'); };
+            const renderCategoryNav = () => { DOM.categoryNav.innerHTML = ''; const navContainer = document.createElement('div'); navContainer.className = 'flex-grow flex items-center overflow-x-auto'; Object.keys(state.categories).forEach(categoryId => { const category = state.categories[categoryId]; const button = document.createElement('button'); button.dataset.categoryId = categoryId; button.className = `category-tab relative flex-shrink-0 py-2 px-4 text-sm border-b-2 transition-colors duration-200 ${state.selectedCategoryId === categoryId ? 'active' : 'border-transparent text-muted hover:text-primary'}`; button.innerHTML = `<span>${category.name}</span><span class="delete-category-btn absolute top-0 right-0 -mt-1 -mr-1 text-muted hover:text-red-500 hidden text-lg" title="删除分类">&times;</span>`; button.addEventListener('mouseenter', () => button.querySelector('.delete-category-btn').classList.remove('hidden')); button.addEventListener('mouseleave', () => button.querySelector('.delete-category-btn').classList.add('hidden')); navContainer.appendChild(button); }); DOM.categoryNav.appendChild(navContainer); const addBtn = document.createElement('button'); addBtn.id = 'add-category-btn'; addBtn.textContent = '+'; addBtn.title = '添加新分类'; addBtn.className = 'ml-2 py-1 px-3 text-lg font-bold text-accent hover:bg-gray-700 rounded-md transition-colors duration-200'; DOM.categoryNav.appendChild(addBtn); };
+            const getCalculationBadge = (website) => { let badgeClass = 'text-xs px-2 py-0.5 rounded-full whitespace-nowrap text-white '; switch (website.calculationType) { case 'monthly': return `<span class="${badgeClass} bg-sky-500">月</span>`; case 'custom_days': return `<span class="${badgeClass} bg-indigo-500">${website.customDays || 1}天</span>`; case 'date_range': return `<span class="${badgeClass} bg-orange-500">至 ${website.endDate || '未设置'}</span>`; default: return ''; } };
+            const renderTagBadges = (tags) => { if (!tags || tags.length === 0) return ''; return tags.map(tag => `<span class="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-md whitespace-nowrap">${tag}</span>`).join(''); };
+            const initializeSortable = (ulElement) => { new Sortable(ulElement, { group: 'nested-list', animation: 150, fallbackOnBody: true, swapThreshold: 0.65, onEnd: handleDragEnd, }); };
+            const handleDragEnd = (event) => { const itemId = event.item.dataset.id; const toParentId = event.to.dataset.id || null; const newIndex = event.newIndex; if (findAndMoveNode(state.categories[state.selectedCategoryId].websites, itemId, toParentId, newIndex)) { recordHistory('调整顺序'); renderWebsiteList(); } };
+            const renderWebsiteList = () => { DOM.websiteList.innerHTML = ''; DOM.websiteList.dataset.id = ''; const websiteTree = state.categories[state.selectedCategoryId]?.websites || []; const activeFilters = state.activeTagFilters || []; const filteredTree = activeFilters.length > 0 ? filterTreeByTags(websiteTree, activeFilters, state.selectedCategoryId) : websiteTree; const renderNode = (node, level) => { const li = document.createElement('li'); li.dataset.id = node.id; const indentStyle = `padding-left: ${level * 20}px;`; const combinedTags = getCombinedTags(node.id, state.selectedCategoryId); if (node.type === 'folder') { li.className = 'group'; li.innerHTML = `<div class="p-2 rounded-lg hover:bg-hover"><div class="folder-item flex items-center" style="${indentStyle}" data-id="${node.id}"><div class="flex items-center flex-grow min-w-0 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-400 transition-transform duration-200 ${node.isOpen ? 'rotate-90' : ''}" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg><p class="font-semibold truncate text-blue-400">${node.name}</p></div><div class="flex items-center gap-1.5 ml-auto pl-4 flex-shrink-0">${renderTagBadges(combinedTags)}</div><div class="flex items-center space-x-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><button class="add-website-to-folder-btn text-muted hover:text-primary p-1 rounded-md" title="添加网站"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-5L9 4H4zm7 5a1 1 0 11-2 0v2H7a1 1 0 110-2h2V7a1 1 0 112 0v2h2a1 1 0 110 2h-2v-2z" clip-rule="evenodd" /></svg></button><button class="add-subfolder-btn text-muted hover:text-primary p-1 rounded-md" title="创建子文件夹"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm7 5a1 1 0 11-2 0v2H7a1 1 0 110-2h2V6a1 1 0 112 0v2h2a1 1 0 110 2h-2v2a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button><button class="edit-item-btn text-muted hover:text-primary p-1 rounded-md" title="编辑文件夹"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button class="delete-item-btn text-muted hover:text-red-500 p-1 rounded-md" title="删除文件夹"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button></div></div></div>`; if (node.isOpen && node.children) { const ul = document.createElement('ul'); ul.className = 'space-y-1 mt-1'; ul.dataset.id = node.id; node.children.forEach(child => ul.appendChild(renderNode(child, level + 1))); li.appendChild(ul); initializeSortable(ul); } } else { const isSelected = node.id === state.selectedWebsiteId; li.className = `group cursor-pointer transition-all duration-200 border-l-4 rounded-r-md ${isSelected ? 'selected-website' : 'border-transparent'}`; li.innerHTML = `<div class="flex items-center p-3" style="${indentStyle}"><div class="flex-grow min-w-0 mr-4 flex items-center gap-2"><p class="font-medium truncate text-secondary">${node.name}</p>${getCalculationBadge(node)}</div><div class="flex items-center gap-1.5 ml-auto pl-4 flex-shrink-0">${renderTagBadges(combinedTags)}</div><div class="flex items-center space-x-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"><a href="${node.url}" target="_blank" class="text-muted hover:text-primary p-1 rounded-md" title="访问网站" onclick="event.stopPropagation()"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg></a><button class="copy-btn text-muted hover:text-primary p-1 rounded-md" data-copy-text="${node.name}" title="复制名称"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg></button><button class="edit-item-btn text-muted hover:text-primary p-1 rounded-md" title="编辑网站"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button class="delete-item-btn text-muted hover:text-red-500 p-1 rounded-md" title="删除网站"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button></div></div>`; } return li; }; filteredTree.forEach(node => DOM.websiteList.appendChild(renderNode(node, 0))); initializeSortable(DOM.websiteList); };
+            const isAccountConsideredUsed = (website, email, date) => { const dateObj = dayjs(date); const dateStr = dateObj.format('YYYY-MM-DD'); switch (website.calculationType) { case 'monthly': { const startOfMonth = dateObj.startOf('month'); const endOfMonth = dateObj.endOf('month'); for (let d = startOfMonth; d.isBefore(endOfMonth) || d.isSame(endOfMonth, 'day'); d = d.add(1, 'day')) { if (state.usageData[d.format('YYYY-MM-DD')]?.[website.id]?.[email]?.used) return true; } return false; } case 'custom_days': { const daysToCheck = website.customDays || 1; for (let i = 0; i < daysToCheck; i++) { const checkDateStr = dateObj.subtract(i, 'day').format('YYYY-MM-DD'); if (state.usageData[checkDateStr]?.[website.id]?.[email]?.used) return true; } return false; } case 'date_range': { if (!website.endDate || dateObj.isAfter(dayjs(website.endDate))) return state.usageData[dateStr]?.[website.id]?.[email]?.used || false; const startOfMonth = dateObj.startOf('month'); for (let d = startOfMonth; d.isBefore(dateObj) || d.isSame(dateObj, 'day'); d = d.add(1, 'day')) { if (state.usageData[d.format('YYYY-MM-DD')]?.[website.id]?.[email]?.used) return true; } return false; } default: return state.usageData[dateStr]?.[website.id]?.[email]?.used || false; } };
+            const renderAccountSection = () => { const selectedId = state.selectedWebsiteId; if (!selectedId) { DOM.emptyState.classList.remove('hidden'); DOM.accountListHeader.classList.add('hidden'); DOM.accountManagementSection.classList.add('hidden'); DOM.accountList.innerHTML = ''; DOM.emptyState.querySelector('p').textContent = '请从左侧选择一个网站或文件夹。'; return; } const item = selectedId === '@category' ? { id: '@category', name: state.categories[state.selectedCategoryId].name, type: 'category' } : findNodeById(state.categories[state.selectedCategoryId].websites, selectedId); if (!item) { resetSelection(); return; } DOM.emptyState.classList.add('hidden'); DOM.accountManagementSection.classList.remove('hidden'); DOM.addAccountTargetType.textContent = item.type === 'folder' ? '文件夹' : (item.type === 'category' ? '分类' : '网站'); DOM.addAccountTargetName.textContent = item.name; if (item.type === 'website') { DOM.accountListHeader.classList.remove('hidden'); DOM.currentWebsiteName.innerHTML = item.name + '<span class="ml-2">' + getCalculationBadge(item) + '</span>'; } else { DOM.accountListHeader.classList.add('hidden'); } const currentAccounts = getAccountsForItem(selectedId); DOM.accountList.innerHTML = ''; if (currentAccounts.length === 0) { DOM.accountList.innerHTML = `<li class="text-center text-muted py-8">没有找到账号。请在当前位置或其父级中添加。</li>`; return; } currentAccounts.forEach((account, index) => { const isUsed = item.type === 'website' ? isAccountConsideredUsed(item, account.email, state.selectedDate) : false; const isActuallyUsedToday = item.type === 'website' ? state.usageData[state.selectedDate]?.[selectedId]?.[account.email]?.used || false : false; const note = item.type === 'website' ? state.usageData[state.selectedDate]?.[selectedId]?.[account.email]?.note || '' : ''; const li = document.createElement('li'); const isInherited = account.scope !== selectedId; li.className = `p-4 rounded-lg transition-all duration-300 ${isUsed ? 'bg-green-500/10' : 'bg-gray-800'} ${isInherited ? 'opacity-60' : ''}`; li.dataset.email = account.email; li.innerHTML = `<div class="flex items-start justify-between"><div class="flex items-start flex-grow min-w-0"><input type="checkbox" class="custom-checkbox appearance-none h-5 w-5 bg-gray-600 border-2 border-gray-500 rounded-md checked:bg-blue-500 checked:border-transparent focus:outline-none transition duration-200 mr-4 mt-1 flex-shrink-0" ${isActuallyUsedToday ? 'checked' : ''} ${item.type !== 'website' ? 'disabled' : ''}><div class="flex-grow min-w-0"><div><p class="text-md truncate font-medium ${isUsed ? 'line-through text-muted' : 'text-secondary'}"><span class="text-xs inline-block w-6 text-muted">${index + 1}.</span>${account.email}</p>${isInherited ? `<p class="text-xs text-muted pl-6">（继承自 ${account.scope === '@category' ? '分类' : findNodeById(state.categories[state.selectedCategoryId].websites, account.scope)?.name || '...'}）</p>` : ''}</div><div class="flex items-center mt-1 pl-6"><input type="password" class="password-input w-full bg-transparent text-sm text-muted focus:outline-none" value="${account.password || ''}" readonly placeholder="无密码"></div></div></div><div class="flex items-center space-x-1 ml-2 flex-shrink-0"><button class="toggle-password-btn text-muted hover:text-primary p-1 rounded-md" title="显示/隐藏密码"><svg class="h-5 w-5 eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg></button><button class="copy-btn text-muted hover:text-primary p-1 rounded-md" data-copy-text="${account.email}" title="复制邮箱"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg></button><button class="copy-btn text-muted hover:text-primary p-1 rounded-md" data-copy-text="${account.password || ''}" title="复制密码"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button><button class="edit-password-btn text-muted hover:text-primary p-1 rounded-md" title="修改密码" ${isInherited ? 'disabled' : ''}><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg></button><button class="delete-account-btn text-muted hover:text-red-500 p-1 rounded-md" title="删除账号" ${isInherited ? 'disabled' : ''}><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg></button></div></div><div class="mt-2 pl-12"><input type="text" class="note-input w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-1 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="添加备注..." value="${note}" ${item.type !== 'website' ? 'disabled' : ''}></div>`; DOM.accountList.appendChild(li); }); };
+            const renderCalendar = (date) => { const d = dayjs(date); let html = `<div class="flex items-center justify-between mb-4"><button id="prev-month" class="p-2 rounded-full hover:bg-hover">&lt;</button><h3 class="font-semibold text-lg text-secondary">${d.format('YYYY 年 M 月')}</h3><button id="next-month" class="p-2 rounded-full hover:bg-hover">&gt;</button></div><div class="grid grid-cols-7 gap-1 text-center text-xs text-muted mb-2">${['一','二','三','四','五','六','日'].map(day=>`<div>${day}</div>`).join('')}</div><div class="grid grid-cols-7 gap-1 text-center">`; const offset = (d.startOf('month').day() < 1 ? 7 : 0) + d.startOf('month').day() - 1; for (let i = 0; i < offset; i++) html += '<div></div>'; for (let day = 1; day <= d.daysInMonth(); day++) { const current = d.date(day); const dateStr = current.format('YYYY-MM-DD'); let classes = 'p-2 cursor-pointer hover:bg-hover hover:rounded-full transition-colors duration-200'; if (current.isSame(dayjs(),'day')) classes += ' today'; if (dateStr === state.selectedDate) classes += ' selected-date'; html += `<div class="date-cell ${classes}" data-date="${dateStr}">${day}</div>`; } DOM.calendarContainer.innerHTML = html + '</div>'; document.getElementById('prev-month').addEventListener('click', () => renderCalendar(d.subtract(1, 'month'))); document.getElementById('next-month').addEventListener('click', () => renderCalendar(d.add(1, 'month'))); };
+            const renderHistory = () => { DOM.historyList.innerHTML = ''; if (history.length === 0) { DOM.historyList.innerHTML = '<li class="text-muted">暂无历史记录</li>'; return; } [...history].reverse().forEach((record, index) => { const reversedIndex = history.length - 1 - index; const li = document.createElement('li'); const isActive = reversedIndex === historyPointer; li.className = `history-item p-3 rounded-lg cursor-pointer transition-all duration-200 border-l-4 ${isActive ? 'active' : 'border-transparent hover:bg-hover'}`; li.dataset.historyIndex = reversedIndex; li.innerHTML = `<p class="font-medium text-sm text-secondary">${record.description}</p><p class="text-sm text-muted">${record.timestamp}</p>`; DOM.historyList.appendChild(li); }); };
+            const renderTagCloud = () => { const allTags = new Set(); const collectTags = (nodes) => { if(!nodes) return; nodes.forEach(node => { if(node.tags) node.tags.forEach(tag => allTags.add(tag)); if(node.children) collectTags(node.children); }); }; Object.values(state.categories).forEach(cat => collectTags(cat.websites)); const sortedTags = Array.from(allTags).sort(); if (sortedTags.length === 0) { DOM.tagCloudContainer.classList.add('hidden'); return; } DOM.tagCloudContainer.classList.remove('hidden'); DOM.tagCloudContainer.innerHTML = '<div class="flex flex-wrap items-center gap-2"></div>'; const container = DOM.tagCloudContainer.firstChild; const allBtn = document.createElement('button'); allBtn.textContent = '全部'; allBtn.dataset.tag = 'all'; const isAllActive = (state.activeTagFilters || []).length === 0; allBtn.className = `text-xs font-medium px-2.5 py-1 rounded-full cursor-pointer transition-all duration-200 ${ isAllActive ? 'bg-blue-500 text-white ring-2 ring-offset-2 ring-offset-gray-900 ring-blue-500' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' }`; container.appendChild(allBtn); sortedTags.forEach(tag => { const button = document.createElement('button'); button.textContent = tag; button.dataset.tag = tag; const isActive = (state.activeTagFilters || []).includes(tag); button.className = `tag-cloud-tag text-xs font-medium px-2.5 py-1 rounded-full cursor-pointer transition-all duration-200 ${ isActive ? `bg-blue-500 text-white ring-2 ring-offset-2 ring-offset-gray-900 ring-blue-500` : `bg-gray-700 text-gray-300 hover:bg-gray-600` }`; container.appendChild(button); }); const clearBtn = document.createElement('button'); clearBtn.id = 'clear-tag-filter'; clearBtn.innerHTML = '&times; 清除筛选'; clearBtn.className = 'text-xs text-muted hover:text-primary ml-2'; if ((state.activeTagFilters || []).length > 0) { container.appendChild(clearBtn); } };
+            const filterTreeByTags = (nodes, tags, categoryId) => { return nodes.map(node => ({...node})).filter(function filter(node) { const combinedTags = getCombinedTags(node.id, categoryId); const hasAllTags = tags.every(t => combinedTags.includes(t)); if (node.children) { node.children = node.children.map(child => ({...child})).filter(filter); } return hasAllTags || (node.children && node.children.length > 0); }); };
+            const updateSelectedDateDisplay = () => { DOM.selectedDateDisplay.textContent = dayjs(state.selectedDate).format('YYYY 年 M 月 D 日 dddd'); };
+            const renderAll = () => { updateSelectedDateDisplay(); renderCategoryNav(); renderWebsiteList(); renderAccountSection(); renderCalendar(state.selectedDate); renderTagCloud(); };
+            const resetSelection = () => { state.selectedWebsiteId = '@category'; renderAll(); };
+
+            const applyTheme = (theme) => {
+                if (theme === 'light') {
+                    document.body.classList.add('light');
+                    DOM.themeIconDark.classList.add('hidden');
+                    DOM.themeIconLight.classList.remove('hidden');
+                } else {
+                    document.body.classList.remove('light');
+                    DOM.themeIconDark.classList.remove('hidden');
+                    DOM.themeIconLight.classList.add('hidden');
+                }
+            };
+
+            const toggleTheme = () => {
+                const currentTheme = localStorage.getItem('accountTrackerTheme') || 'dark';
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('accountTrackerTheme', newTheme);
+                applyTheme(newTheme);
+            };
+
+            const setupEventListeners = () => {
+                DOM.categoryNav.addEventListener('click', (e) => { const tab = e.target.closest('.category-tab'); if (e.target.closest('#add-category-btn')) { addCategory(); return; } if (tab) { const categoryId = tab.dataset.categoryId; if (e.target.closest('.delete-category-btn')) { e.stopPropagation(); deleteCategory(categoryId); } else if (state.selectedCategoryId !== categoryId) { state.selectedCategoryId = categoryId; state.selectedWebsiteId = '@category'; state.activeTagFilters = []; recordHistory(`切换到分类: ${state.categories[categoryId].name}`, true); renderAll(); } else { state.selectedWebsiteId = '@category'; renderAll(); } } });
+                DOM.websiteList.addEventListener('click', (e) => { const targetLi = e.target.closest('li[data-id]'); if (!targetLi) return; const nodeId = targetLi.dataset.id; const node = findNodeById(state.categories[state.selectedCategoryId].websites, nodeId); if (!node) return; const addWebsiteBtn = e.target.closest('.add-website-to-folder-btn'), addFolderBtn = e.target.closest('.add-subfolder-btn'), editBtn = e.target.closest('.edit-item-btn'), deleteBtn = e.target.closest('.delete-item-btn'), copyBtn = e.target.closest('.copy-btn'), folderItem = e.target.closest('.folder-item .flex-grow'); if (addWebsiteBtn) { e.stopPropagation(); openEditItemModal(null, nodeId, 'website'); } else if (addFolderBtn) { e.stopPropagation(); openEditItemModal(null, nodeId, 'folder'); } else if (deleteBtn) { e.stopPropagation(); deleteItem(nodeId); } else if (editBtn) { e.stopPropagation(); openEditItemModal(nodeId); } else if (copyBtn) { e.stopPropagation(); handleCopy(copyBtn); } else if (folderItem) { state.selectedWebsiteId = nodeId; recordHistory(`选择 ${node.type}: ${node.name}`, true); findAndToggleFolder(state.categories[state.selectedCategoryId].websites, nodeId); renderAll(); } else { state.selectedWebsiteId = nodeId; recordHistory(`选择 ${node.type}: ${node.name}`, true); renderAll(); } });
+                DOM.addWebsiteBtn.addEventListener('click', () => openEditItemModal(null, null, 'website'));
+                DOM.addFolderBtn.addEventListener('click', () => openEditItemModal(null, null, 'folder'));
+                DOM.addAccountForm.addEventListener('submit', (e) => { e.preventDefault(); const targetId = state.selectedWebsiteId; if (!targetId) { showToast('请先选择一个目标！'); return; } const email = DOM.accountEmailInput.value.trim(), password = DOM.accountPasswordInput.value.trim(); if (!email) return; const categoryId = state.selectedCategoryId; if (!state.accounts[categoryId]) state.accounts[categoryId] = {}; if (!state.accounts[categoryId][targetId]) state.accounts[categoryId][targetId] = []; const targetAccountList = state.accounts[categoryId][targetId]; if (targetAccountList.some(acc => acc.email === email)) { showToast('该邮箱已在此位置存在!'); } else { targetAccountList.push({ email, password }); recordHistory(`添加账号到: ${targetId}`); renderAccountSection(); showToast('账号添加成功!'); DOM.addAccountForm.reset(); DOM.accountEmailInput.focus(); } });
+                DOM.accountList.addEventListener('click', (e) => { const li = e.target.closest('[data-email]'); if(!li) return; const email=li.dataset.email; const delBtn = e.target.closest('.delete-account-btn'), editBtn = e.target.closest('.edit-password-btn'); if (delBtn && !delBtn.disabled) { if(confirm(`确定要删除在此位置定义的账号 "${email}" 吗？`)) deleteAccount(email); } else if (editBtn && !editBtn.disabled) { const np = prompt(`为 ${email} 输入新密码:`, li.querySelector('.password-input').value); if(np !== null) updateAccountPassword(email, np); } else if (e.target.closest('.copy-btn')) handleCopy(e.target.closest('.copy-btn')); else if (e.target.closest('.toggle-password-btn')) { const pi = li.querySelector('.password-input'); pi.type = pi.type === 'password' ? 'text' : 'password'; } else if (e.target.closest('input[type="checkbox"]')) { const cb = e.target.closest('input[type="checkbox"]'); if(!cb.disabled) { updateUsage(email, 'used', cb.checked); renderAccountSection(); } } });
+                DOM.accountList.addEventListener('change', (e) => { if(e.target.classList.contains('note-input') && !e.target.disabled) updateUsage(e.target.closest('[data-email]').dataset.email, 'note', e.target.value); });
+                DOM.calendarContainer.addEventListener('click', (e) => { const cell = e.target.closest('.date-cell'); if(cell) { state.selectedDate = cell.dataset.date; recordHistory('更改日期', true); updateSelectedDateDisplay(); renderCalendar(state.selectedDate); renderAccountSection(); }});
+                DOM.saveBtn.addEventListener('click', saveState); DOM.undoBtn.addEventListener('click', undo); DOM.redoBtn.addEventListener('click', redo);
+                document.addEventListener('keydown', (e) => { if (e.ctrlKey) { if (e.key.toLowerCase() === 'z') e.preventDefault(), undo(); if (e.key.toLowerCase() === 'y') e.preventDefault(), redo(); if (e.key.toLowerCase() === 's') e.preventDefault(), saveState(); } });
+                DOM.historyBtn.addEventListener('click', () => { renderHistory(); DOM.historyModal.classList.add('flex'); DOM.historyModal.classList.remove('hidden'); }); DOM.closeHistoryModal.addEventListener('click', () => { DOM.historyModal.classList.remove('flex'); DOM.historyModal.classList.add('hidden'); });
+                DOM.historyList.addEventListener('click', (e) => { const item = e.target.closest('[data-history-index]'); if(item) { loadStateFromHistory(parseInt(item.dataset.historyIndex, 10)); renderHistory(); }});
+                DOM.instructionsBtn.addEventListener('click', () => { DOM.instructionsModal.classList.add('flex'); DOM.instructionsModal.classList.remove('hidden'); }); DOM.closeInstructionsModal.addEventListener('click', () => { DOM.instructionsModal.classList.remove('flex'); DOM.instructionsModal.classList.add('hidden'); });
+                DOM.dataManagementBtn.addEventListener('click', () => { DOM.dataManagementModal.classList.add('flex'); DOM.dataManagementModal.classList.remove('hidden'); }); DOM.closeDataManagementModal.addEventListener('click', () => { DOM.dataManagementModal.classList.remove('flex'); DOM.dataManagementModal.classList.add('hidden'); });
+                DOM.authorBtn.addEventListener('click', () => showToast('作者: 九帧aceko007'));
+                DOM.themeToggleBtn.addEventListener('click', toggleTheme);
+                DOM.editItemCalcTypeSelect.addEventListener('change', (e) => { DOM.customDaysContainer.classList.toggle('hidden', e.target.value !== 'custom_days'); DOM.dateRangeContainer.classList.toggle('hidden', e.target.value !== 'date_range'); });
+                DOM.cancelEditItemBtn.addEventListener('click', () => { DOM.editItemModal.classList.remove('flex'); DOM.editItemModal.classList.add('hidden'); });
+                DOM.saveEditItemBtn.addEventListener('click', saveEditedItem);
+                const setupImportButton = (btn, mode) => btn.addEventListener('click', () => { currentImportMode = mode; DOM.importFileInput.click(); });
+                setupImportButton(DOM.importGlobalOverwrite, 'globalOverwrite');
+                DOM.importFileInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (!file || !currentImportMode) return; const reader = new FileReader(); reader.onload = (event) => { try { const data = JSON.parse(event.target.result); processImport(data, currentImportMode); } catch (error) { showToast('导入失败，文件格式错误!'); console.error("Import error:", error); } finally { DOM.importFileInput.value = ''; currentImportMode = null; } }; reader.readAsText(file); });
+                DOM.clearDataBtn.addEventListener('click', () => { if (confirm('【高危操作】您确定要清空所有本地存储的数据吗？\n\n此操作不可逆，将删除所有网站、账号和历史记录！')) { if (confirm('【二次确认】真的要删除所有数据吗？请再次确认。')) { localStorage.removeItem('accountTrackerHistory'); localStorage.removeItem('accountTrackerTheme'); alert('所有数据已成功清除。页面将重新加载。'); location.reload(); } } });
+                DOM.tagCloudContainer.addEventListener('click', (e) => { const tagBtn = e.target.closest('[data-tag]'); if (tagBtn) { const tag = tagBtn.dataset.tag; if (!state.activeTagFilters) state.activeTagFilters = []; if (tag === 'all' || e.target.id === 'clear-tag-filter') { state.activeTagFilters = []; } else { const tagIndex = state.activeTagFilters.indexOf(tag); if (tagIndex === -1) { state.activeTagFilters.push(tag); } else { state.activeTagFilters.splice(tagIndex, 1); } } renderAll(); } });
+            };
+            
+            let toastTimeout; const showToast = (message) => { clearTimeout(toastTimeout); DOM.toast.textContent = message; DOM.toast.classList.remove('opacity-0', 'translate-y-2'); toastTimeout = setTimeout(() => DOM.toast.classList.add('opacity-0', 'translate-y-2'), 2000); };
+            const handleCopy = (button) => { const text = button.dataset.copyText; if (!text) { showToast('没有内容可复制!'); return; } navigator.clipboard.writeText(text).then(() => showToast('复制成功!'), () => showToast('复制失败!')); };
+            const updateUsage = (email, key, value) => { const { selectedDate, selectedWebsiteId } = state; if (!state.usageData[selectedDate]) state.usageData[selectedDate] = {}; if (!state.usageData[selectedDate][selectedWebsiteId]) state.usageData[selectedDate][selectedWebsiteId] = {}; if (!state.usageData[selectedDate][selectedWebsiteId][email]) state.usageData[selectedDate][selectedWebsiteId][email] = {}; state.usageData[selectedDate][selectedWebsiteId][email][key] = value; recordHistory(`${key==='used'?(value?'标记使用':'取消使用'):'更新备注'}: ${email}`); };
+            const deleteAccount = (email) => { const targetId = state.selectedWebsiteId; const accountList = state.accounts[state.selectedCategoryId]?.[targetId]; if (!accountList) return; const accountIndex = accountList.findIndex(acc => acc.email === email); if (accountIndex > -1) { accountList.splice(accountIndex, 1); recordHistory(`删除账号: ${email}`); renderAccountSection(); showToast('账号已删除!'); }};
+            const updateAccountPassword = (email, newPassword) => { const targetId = state.selectedWebsiteId; const accountList = state.accounts[state.selectedCategoryId]?.[targetId]; if (!accountList) return; const account = accountList.find(acc => acc.email === email); if (account) { account.password = newPassword; recordHistory(`更新密码: ${email}`); renderAccountSection(); showToast('密码更新成功!'); }};
+            const openEditItemModal = (itemId, parentId = null, forceType = null) => { const item = itemId ? findNodeById(state.categories[state.selectedCategoryId].websites, itemId) : null; DOM.editItemForm.reset(); DOM.editItemIdInput.value = itemId || ''; DOM.editItemParentIdInput.value = parentId || ''; const itemType = forceType || (item ? item.type : 'website'); const isFolder = itemType === 'folder'; DOM.editItemModalTitle.textContent = itemId ? `编辑 ${isFolder ? '文件夹' : '网站'}` : `添加新 ${isFolder ? '文件夹' : '网站'}`; DOM.editItemNameInput.value = item ? item.name : ''; DOM.editItemTagsInput.value = item && item.tags ? item.tags.join(', ') : ''; DOM.editItemUrlContainer.classList.toggle('hidden', isFolder); DOM.editItemCalcContainer.classList.toggle('hidden', isFolder); DOM.customDaysContainer.classList.add('hidden'); DOM.dateRangeContainer.classList.add('hidden'); if (!isFolder) { DOM.editItemUrlInput.value = item ? item.url : 'https://www.aceko007.top'; const calcType = item ? item.calculationType : 'daily'; DOM.editItemCalcTypeSelect.value = calcType; DOM.customDaysContainer.classList.toggle('hidden', calcType !== 'custom_days'); DOM.dateRangeContainer.classList.toggle('hidden', calcType !== 'date_range'); if (calcType === 'custom_days') DOM.editItemCustomDaysInput.value = item.customDays || ''; if (calcType === 'date_range') DOM.editItemEndDateInput.value = item.endDate || ''; } DOM.editItemModal.classList.remove('hidden'); DOM.editItemModal.classList.add('flex'); };
+            const saveEditedItem = () => { const itemId = DOM.editItemIdInput.value, parentId = DOM.editItemParentIdInput.value, name = DOM.editItemNameInput.value.trim(); if (!name) { showToast("名称不能为空！"); return; } const tags = DOM.editItemTagsInput.value.split(',').map(t => t.trim()).filter(Boolean); const websites = state.categories[state.selectedCategoryId].websites; const itemToEdit = itemId ? findNodeById(websites, itemId) : null; const isFolder = DOM.editItemUrlContainer.classList.contains('hidden'); if (itemId) { if (itemToEdit) { itemToEdit.name = name; itemToEdit.tags = tags; if (itemToEdit.type === 'website') { const url = DOM.editItemUrlInput.value.trim(); if (!url) { showToast("网站URL不能为空！"); return; } itemToEdit.url = url; const calcType = DOM.editItemCalcTypeSelect.value, customDays = parseInt(DOM.editItemCustomDaysInput.value, 10), endDate = DOM.editItemEndDateInput.value; if (calcType === 'custom_days' && (!customDays || customDays < 1)) { showToast("自定义天数必须是大于0的数字！"); return; } if (calcType === 'date_range' && !endDate) { showToast("截止日期不能为空！"); return; } itemToEdit.calculationType = calcType; itemToEdit.customDays = calcType === 'custom_days' ? customDays : null; itemToEdit.endDate = calcType === 'date_range' ? endDate : null; } recordHistory(`编辑: ${name}`); showToast("信息更新成功！"); } } else { if(!isFolder) { const url = DOM.editItemUrlInput.value.trim(); if (!url) { showToast("网站URL不能为空！"); return; } const calcType = DOM.editItemCalcTypeSelect.value, customDays = parseInt(DOM.editItemCustomDaysInput.value, 10), endDate = DOM.editItemEndDateInput.value; const newWebsite = { id: 'website-' + Date.now(), type: 'website', name, url, tags, calculationType: calcType, customDays: calcType === 'custom_days' ? customDays : null, endDate: calcType === 'date_range' ? endDate : null }; findAndAddNode(websites, parentId, newWebsite); recordHistory(`添加网站: ${name}`); } else { const newFolder = { id: 'folder-' + Date.now(), type: 'folder', name, tags, isOpen: true, children: [] }; findAndAddNode(websites, parentId, newFolder); recordHistory(`添加文件夹: ${name}`); } showToast("添加成功！"); } DOM.editItemModal.classList.add('hidden'); DOM.editItemModal.classList.remove('flex'); renderAll(); };
+            const deleteItem = (nodeId) => { const nodeToDelete = findNodeById(state.categories[state.selectedCategoryId].websites, nodeId); if (!nodeToDelete) return; const message = nodeToDelete.type === 'folder' ? `确定要删除文件夹 "${nodeToDelete.name}" 及其所有内容吗？` : `确定要删除网站 "${nodeToDelete.name}" 吗？相关使用记录也将清除。`; if (confirm(message)) { const idsToDelete = []; const collectIds = (node) => { idsToDelete.push(node.id); if(node.children) node.children.forEach(collectIds); }; collectIds(nodeToDelete); Object.keys(state.usageData).forEach(date => idsToDelete.forEach(id => { if (state.usageData[date]?.[id]) delete state.usageData[date][id]; })); findAndDeleteNode(state.categories[state.selectedCategoryId].websites, nodeId); idsToDelete.forEach(id => delete state.accounts[state.selectedCategoryId]?.[id]); if (state.selectedWebsiteId === nodeId) state.selectedWebsiteId = '@category'; recordHistory(`删除: ${nodeToDelete.name}`); renderAll(); showToast(`${nodeToDelete.type === 'folder' ? '文件夹' : '网站'}已删除！`); } };
+            const addCategory = () => { const name = prompt("请输入新分类的名称:"); if (!name || name.trim() === '') return; const newId = 'category-' + Date.now(); state.categories[newId] = { name: name.trim(), websites: [] }; state.accounts[newId] = {}; state.selectedCategoryId = newId; state.selectedWebsiteId = '@category'; recordHistory(`添加分类: ${name.trim()}`); renderAll(); showToast("新分类已添加！"); };
+            const deleteCategory = (categoryId) => { if (Object.keys(state.categories).length <= 1) { alert("无法删除最后一个分类。"); return; } const category = state.categories[categoryId]; if (confirm(`【警告】确定要删除分类 "${category.name}" 吗？\n\n此操作将永久删除该分类下的所有网站、账号和使用记录！`)) { delete state.categories[categoryId]; delete state.accounts[categoryId]; if (state.selectedCategoryId === categoryId) { state.selectedCategoryId = Object.keys(state.categories)[0]; state.selectedWebsiteId = '@category'; } recordHistory(`删除分类: ${category.name}`); renderAll(); showToast("分类已删除！"); } };
+            const processImport = (data, mode) => { if (mode === 'globalOverwrite') { if (confirm('这将覆盖所有数据和操作历史，确定吗？')) { history = data.history || []; historyPointer = data.historyPointer ?? -1; if (history.length > 0 && historyPointer >= 0) { state = JSON.parse(JSON.stringify(history[historyPointer].state)); } else { resetToInitialState(); } showToast('已覆盖所有数据！'); init(true); } return; }};
+
+            const init = (isReload = false) => {
+                if (!isReload) {
+                    loadState();
+                    setupEventListeners();
+                }
+                const savedTheme = localStorage.getItem('accountTrackerTheme') || 'dark';
+                applyTheme(savedTheme);
+                renderAll();
+                updateHistoryButtons();
+            };
+
+            init();
+        });
+    </script>
+</body>
+</html>
